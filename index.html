@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bin do Roteiro – mídia livre para vídeos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9edf2;--panel:#fff;--ink:#101828;--mute:#566074;--line:#c9d1dd;--acc:#2f4bff;--accink:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1116;--panel:#171c24;--ink:#e8ecf3;--mute:#9aa5b8;--line:#2a3240;--acc:#7c93ff;--accink:#0e1116}}
+*{box-sizing:border-box}
+html{color-scheme:light dark}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Bricolage Grotesque",system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:clamp(28px,6vw,46px);line-height:1.05;margin:8px 0 6px;font-weight:800;letter-spacing:-.02em}
+.lead{color:var(--mute);max-width:60ch;margin:0 0 20px}
+textarea,input{width:100%;font:inherit;color:var(--ink);background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:12px}
+textarea{min-height:170px;resize:vertical}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+button{font:inherit;cursor:pointer;min-height:44px;border-radius:10px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);padding:0 16px}
+.main{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:600;margin-top:12px;width:100%}
+@media(min-width:600px){.main{width:auto;padding:0 28px}}
+details{margin:14px 0;background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:10px 14px}
+summary{cursor:pointer;font-weight:600}
+details label{display:block;margin:12px 0 4px;font-size:14px;color:var(--mute)}
+details a{color:var(--acc)}
+.scene{background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:14px;margin-top:18px}
+.scene h2{margin:0 0 4px;font-size:18px}
+.scene p.t{margin:0 0 10px;color:var(--mute);font-size:14px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.bar input{flex:1 1 200px;width:auto}
+.tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.card{border:1.5px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.th{position:relative;aspect-ratio:16/9;background:var(--line)}
+.th img{width:100%;height:100%;object-fit:cover;display:block}
+.bd{position:absolute;left:6px;top:6px;background:var(--ink);color:var(--bg);font-size:12px;padding:1px 8px;border-radius:99px}
+.meta{padding:8px 10px;font-size:13px;display:flex;flex-direction:column;gap:2px;flex:1}
+.meta small{color:var(--mute)}
+.meta a{color:var(--acc)}
+.dl{border:0;border-radius:0;background:var(--acc);color:var(--accink);font-weight:600;width:100%;min-height:46px}
+.dl:disabled{opacity:.6}
+.msg{color:var(--mute);grid-column:1/-1;margin:4px 0}
+select{font:inherit;color:var(--ink);background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:0 10px;min-height:44px;max-width:100%}
+.ex{margin:12px 0 0;padding:8px 12px}
+.ex a{display:inline-block;margin:6px 16px 6px 0;color:var(--acc)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Bin do Roteiro</h1>
+  <p class="lead">Cole o roteiro do vídeo. O site divide em cenas, sugere um termo de busca para cada uma e busca fotos e vídeos livres em vários sites de uma vez (Pexels, Pixabay, Wikimedia Commons, Internet Archive, NASA e Openverse) e mostra a licença de cada um.</p>
+
+  <label for="rot" class="lead">Roteiro (separe as cenas com uma linha em branco)</label>
+  <textarea id="rot" placeholder="Cole aqui o texto do seu vídeo..."></textarea>
+  <button class="main" id="go">Encontrar mídia para as cenas</button>
+
+  <details>
+    <summary>Configurar chaves gratuitas (mais fotos e vídeos)</summary>
+    <label for="kPex">Chave do Pexels – fotos e vídeos. <a href="https://www.pexels.com/api/" target="_blank" rel="noopener">Pegar chave grátis</a></label>
+    <input id="kPex" autocomplete="off" placeholder="Cole a chave do Pexels">
+    <label for="kPix">Chave do Pixabay – fotos e vídeos. <a href="https://pixabay.com/api/docs/" target="_blank" rel="noopener">Pegar chave grátis</a></label>
+    <input id="kPix" autocomplete="off" placeholder="Cole a chave do Pixabay">
+    <label>As chaves ficam salvas só neste aparelho. Sem chaves, o site ainda busca no Wikimedia Commons, Internet Archive, NASA e Openverse (fotos).</label>
+  </details>
+
+  <div id="out"></div>
+</main>
+
+<script>
+const h=(t,p={},...c)=>{const e=document.createElement(t);Object.assign(e,p);e.append(...c);return e};
+const K=n=>{try{return localStorage.getItem(n)||''}catch(e){return ''}};
+const S=(n,v)=>{try{localStorage.setItem(n,v)}catch(e){}};
+const J=async(u,o)=>{const r=await fetch(u,o);if(!r.ok)throw new Error(r.status);return r.json()};
+const ext=u=>(u.split('?')[0].match(/\.(jpe?g|png|webp|gif)$/i)||['.jpg'])[0];
+
+const SW=new Set('para como mais mas isso esse essa esta este seus suas pelo pela pelos pelas com uma uns umas dos das nos nas que por não sim muito muita ser foi são está estão tem têm ter vai vamos você vocês quando onde porque então também ainda sobre entre depois antes até cada outro outra outros outras todo toda todos todas aqui ali lá nosso nossa nossos nossas seu sua meu minha fazer faz fazem coisa coisas pode podem vez só já mesmo mesma assim agora hoje bem'.split(' '));
+
+function split(t){
+  let p=t.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);
+  if(p.length<2){const s=t.match(/[^.!?\n]+[.!?]*/g)||[t];p=[];for(let i=0;i<s.length;i+=2)p.push(s.slice(i,i+2).join(' ').trim())}
+  return p.filter(x=>x.length>12);
+}
+function kw(t){
+  const c={};(t.toLowerCase().match(/\p{L}{4,}/gu)||[]).forEach(w=>{if(!SW.has(w))c[w]=(c[w]||0)+1});
+  return Object.keys(c).sort((a,b)=>c[b]-c[a]||b.length-a.length).slice(0,3).join(' ');
+}
+async function tr(q){
+  try{const j=await J('https://api.mymemory.translated.net/get?langpair=pt|en&q='+encodeURIComponent(q));
+    const t=j.responseData&&j.responseData.translatedText;return t&&!/MYMEMORY|QUERY LENGTH/i.test(t)?t:q}catch(e){return q}
+}
+
+const SRC={
+  async pexels(q,v){
+    const k=K('kPex');if(!k)return[];const o={headers:{Authorization:k}};
+    if(!v){const j=await J('https://api.pexels.com/v1/search?per_page=8&orientation=landscape&query='+q,o);
+      return j.photos.map(p=>({t:p.src.medium,u:p.src.large2x,pg:p.url,s:'Pexels',l:'Uso livre, sem crédito obrigatório',n:'pexels-'+p.id+'.jpg'}))}
+    const j=await J('https://api.pexels.com/videos/search?per_page=8&orientation=landscape&query='+q,o);
+    return j.videos.map(x=>{
+      const f=x.video_files.filter(f=>f.file_type=='video/mp4'&&f.width).sort((a,b)=>Math.abs(a.width-1920)-Math.abs(b.width-1920))[0];
+      return f&&{t:x.image,u:f.link,pg:x.url,s:'Pexels',l:'Uso livre, sem crédito obrigatório',n:'pexels-'+x.id+'.mp4',v:1}}).filter(Boolean);
+  },
+  async pixabay(q,v){
+    const k=K('kPix');if(!k)return[];
+    if(!v){const j=await J('https://pixabay.com/api/?image_type=photo&per_page=8&safesearch=true&key='+k+'&q='+q);
+      return j.hits.map(p=>({t:p.webformatURL,u:p.largeImageURL,pg:p.pageURL,s:'Pixabay',l:'Uso livre, sem crédito obrigatório',n:'pixabay-'+p.id+ext(p.largeImageURL)}))}
+    const j=await J('https://pixabay.com/api/videos/?per_page=8&safesearch=true&key='+k+'&q='+q);
+    return j.hits.map(x=>{const f=x.videos.large.url?x.videos.large:x.videos.medium;
+      return {t:'https://i.vimeocdn.com/video/'+x.picture_id+'_640x360.jpg',u:f.url,pg:x.pageURL,s:'Pixabay',l:'Uso livre, sem crédito obrigatório',n:'pixabay-'+x.id+'.mp4',v:1}});
+  },
+  async openverse(q){
+    const j=await J('https://api.openverse.org/v1/images/?page_size=8&license_type=commercial&q='+q);
+    return j.results.map(p=>({t:p.thumbnail||p.url,u:p.url,pg:p.foreign_landing_url,s:'Openverse',
+      l:'CC '+String(p.license).toUpperCase()+' '+(p.license_version||'')+(p.creator?' – crédito: '+p.creator:''),n:'openverse-'+p.id+ext(p.url)}))
+  },
+  async commons(q,v){
+    const j=await J('https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=6&prop=imageinfo&iiprop=url|mime|extmetadata&iiurlwidth=480&gsrsearch='+q+'%20filetype:'+(v?'video':'bitmap'));
+    return Object.values((j.query&&j.query.pages)||{}).map(p=>{
+      const i=p.imageinfo&&p.imageinfo[0];if(!i)return null;const m=i.extmetadata||{};
+      const by=m.Artist?' – crédito: '+m.Artist.value.replace(/<[^>]*>/g,'').slice(0,60):'';
+      return {t:i.thumburl||i.url,u:i.url,pg:i.descriptionurl,s:'Wikimedia Commons',l:(m.LicenseShortName?m.LicenseShortName.value:'Veja a licença na página')+by,n:'commons-'+p.pageid+'.'+i.url.split('.').pop(),v}}).filter(Boolean);
+  },
+  async nasa(q,v){
+    const j=await J('https://images-api.nasa.gov/search?page_size=6&media_type='+(v?'video':'image')+'&q='+q);
+    return j.collection.items.slice(0,6).map(x=>{
+      const d=x.data[0],l=x.links&&x.links[0];if(!l)return null;
+      return {t:l.href,pg:'https://images.nasa.gov/details/'+d.nasa_id,s:'NASA',l:'Em geral domínio público (confira pessoas e logos)',n:'nasa-'+d.nasa_id+(v?'.mp4':'.jpg'),v,
+        res:async()=>{const a=await J('https://images-api.nasa.gov/asset/'+encodeURIComponent(d.nasa_id));const u=a.collection.items.map(i=>i.href);
+          const f=v?(u.find(s=>/~medium\.mp4$/.test(s))||u.find(s=>/\.mp4$/.test(s))):(u.find(s=>/~large\.jpg$/.test(s))||u.find(s=>/\.jpg$/.test(s)));
+          return f&&f.replace('http://','https://')}}}).filter(Boolean);
+  },
+  async archive(q,v){
+    const lic=' AND mediatype:'+(v?'movies':'image')+' AND (collection:prelinger OR collection:nasa OR licenseurl:*creativecommons.org* OR licenseurl:*publicdomain*)';
+    const j=await J('https://archive.org/advancedsearch.php?output=json&rows=6&fl%5B%5D=identifier&fl%5B%5D=licenseurl&q=%28'+q+'%29'+encodeURIComponent(lic));
+    return j.response.docs.map(d=>({t:'https://archive.org/services/img/'+d.identifier,pg:'https://archive.org/details/'+d.identifier,s:'Internet Archive',
+      l:d.licenseurl?'Licença: '+String(d.licenseurl).replace(/^https?:\/\//,'').slice(0,45):'Coleção de domínio público (confira a página)',n:'archive-'+d.identifier+(v?'.mp4':'.jpg'),v,
+      res:async()=>{const m=await J('https://archive.org/metadata/'+d.identifier);
+        const f=(m.files||[]).filter(f=>v?/\.mp4$/i.test(f.name):/\.(jpe?g|png)$/i.test(f.name)).sort((a,b)=>b.size-a.size);
+        const b=f.find(x=>+x.size<2e8)||f[0];return b&&'https://archive.org/download/'+d.identifier+'/'+b.name.split('/').map(encodeURIComponent).join('/')}}));
+  }
+};
+async function find(q,v){
+  const jobs=[SRC.pexels(q,v),SRC.pixabay(q,v),SRC.commons(q,v),SRC.archive(q,v),SRC.nasa(q,v)];if(!v)jobs.push(SRC.openverse(q));
+  const r=await Promise.allSettled(jobs);
+  const a=r.filter(x=>x.status=='fulfilled').map(x=>x.value),o=[];
+  for(let i=0;i<8;i++)a.forEach(l=>l[i]&&o.push(l[i]));
+  return o;
+}
+
+async function dl(it,b){
+  const o=b.textContent;b.textContent='Baixando...';b.disabled=true;let u=it.u;
+  try{
+    if(!u&&it.res)u=await it.res();if(!u)throw 0;
+    const r=await fetch(u);if(!r.ok)throw 0;const bl=await r.blob();
+    const a=h('a',{href:URL.createObjectURL(bl),download:it.n});document.body.append(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);b.textContent='Baixado ✓';
+  }catch(e){window.open(u||it.pg,'_blank');b.textContent='Aberto em outra aba: segure para salvar'}
+  b.disabled=false;setTimeout(()=>b.textContent=o,4000);
+}
+function card(it){
+  const b=h('button',{className:'dl',textContent:it.v?'Baixar vídeo':'Baixar foto'});
+  b.onclick=()=>dl(it,b);
+  return h('article',{className:'card'},
+    h('div',{className:'th'},h('img',{src:it.t,loading:'lazy',alt:''}),...(it.v?[h('span',{className:'bd',textContent:'vídeo'})]:[])),
+    h('div',{className:'meta'},h('b',{textContent:it.s}),h('small',{textContent:it.l}),h('a',{href:it.pg,target:'_blank',rel:'noopener',textContent:'Ver página original'})),b);
+}
+
+const EX=[
+ ['Pexels vídeos',e=>'https://www.pexels.com/search/videos/'+e+'/'],
+ ['Pixabay vídeos',e=>'https://pixabay.com/videos/search/'+e+'/'],
+ ['Mixkit vídeos',(e,sl)=>'https://mixkit.co/free-stock-video/'+sl+'/'],
+ ['Coverr vídeos',e=>'https://coverr.co/s?q='+e],
+ ['Unsplash fotos',e=>'https://unsplash.com/s/photos/'+e],
+ ['Google Imagens (uso livre)',e=>'https://www.google.com/search?tbm=isch&tbs=sur:fmc&q='+e],
+ ['YouTube com Creative Commons',e=>'https://www.youtube.com/results?search_query='+e+'&sp=EgIwAQ%253D%253D']
+];
+function scene(txt,i){
+  let v=0,items=[];
+  const inp=h('input',{placeholder:'Termo de busca (em inglês rende mais)',ariaLabel:'Termo de busca'});
+  const out=h('div',{className:'grid'});
+  const sel=h('select',{ariaLabel:'Filtrar por fonte'});
+  const bF=h('button',{className:'tab on',textContent:'Fotos'}),bV=h('button',{className:'tab',textContent:'Vídeos'}),bS=h('button',{textContent:'Buscar'});
+  const ex=h('details',{className:'ex'},h('summary',{textContent:'Buscar em outros sites livres'}),h('p',{className:'msg',textContent:'Abrem em outra aba. Confira a licença antes de usar.'}));
+  const links=EX.map(([n,f])=>{const a=h('a',{target:'_blank',rel:'noopener',textContent:n});ex.append(a);return [a,f]});
+  const setLinks=q=>{const e=encodeURIComponent(q),sl=q.trim().replace(/\s+/g,'-').toLowerCase();links.forEach(([a,f])=>a.href=f(e,sl))};
+  function draw(){
+    out.replaceChildren();
+    const f=sel.value,l=items.filter(x=>!f||x.s==f);
+    if(!l.length)out.append(h('p',{className:'msg',textContent:'Nada encontrado. Edite o termo (inglês rende mais) ou use os outros sites logo abaixo.'}));
+    l.forEach(it=>out.append(card(it)));
+  }
+  async function go(){
+    const q=inp.value.trim();if(!q)return;
+    setLinks(q);
+    out.replaceChildren(h('p',{className:'msg',textContent:'Buscando...'}));
+    items=await find(encodeURIComponent(q),v);
+    const src=[...new Set(items.map(x=>x.s))];
+    sel.replaceChildren(h('option',{value:'',textContent:'Todas as fontes'}),...src.map(x=>h('option',{value:x,textContent:x})));
+    draw();
+  }
+  const tab=n=>{v=n;bF.classList.toggle('on',!n);bV.classList.toggle('on',!!n);go()};
+  bF.onclick=()=>tab(0);bV.onclick=()=>tab(1);bS.onclick=go;sel.onchange=draw;
+  inp.onkeydown=e=>{if(e.key=='Enter')go()};
+  const el=h('section',{className:'scene'},h('h2',{textContent:'Cena '+(i+1)}),h('p',{className:'t',textContent:txt}),
+    h('div',{className:'bar'},inp,bF,bV,bS,sel),out,ex);
+  el.init=async()=>{inp.value=kw(txt);if(inp.value)inp.value=await tr(inp.value);await go()};
+  return el;
+}
+
+const rot=document.getElementById('rot'),out=document.getElementById('out');
+rot.value=K('rot');
+['kPex','kPix'].forEach(id=>{const e=document.getElementById(id);e.value=K(id);e.oninput=()=>S(id,e.value.trim())});
+document.getElementById('go').onclick=async()=>{
+  S('rot',rot.value);
+  const list=split(rot.value);
+  out.replaceChildren();
+  if(!list.length){out.append(h('p',{className:'msg',textContent:'Cole um roteiro com pelo menos uma frase.'}));return}
+  const els=list.map(scene);els.forEach(e=>out.append(e));
+  for(const e of els)await e.init();
+};
+</script>
+</body>
+</html>
